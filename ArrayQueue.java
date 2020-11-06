@@ -1,66 +1,73 @@
 import java.nio.*;
 import java.util.concurrent.locks.*;
 
-// Array stack is a bounded lock-based stack using an
-// array. It uses a common lock for both push and pop
-// operations.
+// Array queue is a bounded lock-based FIFO queue using
+// an array. It uses 2 separate locks for head and tail.
 
 class ArrayQueue<T> {
-  Lock lock;
+  Lock headLock;
+  Lock tailLock;
   T[] data;
-  int top;
-  // lock: common lock for push, pop
+  int head;
+  int tail;
+  // headLock: lock for enq() at head
+  // tailLock: lock for deq() at tail
   // data: array of values in stack
-  // top: top of stack (0 if empty)
+  // head: front of queue (0)
+  // tail: rear of queue (0)
 
   @SuppressWarnings("unchecked")
   public ArrayQueue(int capacity) {
-    lock = new ReentrantLock();
+    headLock = new ReentrantLock();
+    tailLock = new ReentrantLock();
     data = (T[]) new Object[capacity];
-    top = 0;
+    head = 0;
+    tail = 0;
   }
 
-  // 1. Lock stack.
-  // 2. Try push.
-  // 3. Unlock stack.
-  public void push(T x) throws BufferOverflowException {
+  // 1. Lock tail.
+  // 2. Try enq.
+  // 3. Unlock tail.
+  public void enq(T x) {
     try {
-    lock.lock();   // 1
-    tryPush(x);    // 2
+    tailLock.lock();   // 1
+    tryEnq(x);         // 2
     } finally {
-    lock.unlock(); // 3
+    tailLock.unlock(); // 3
     }
   }
 
-  // 1. Lock stack.
-  // 2. Try pop.
-  // 3. Unlock stack.
-  public T pop() throws BufferUnderflowException {
+  // 1. Lock head.
+  // 2. Try deq.
+  // 3. Unlock head.
+  public T deq() {
     try {
-    lock.lock();     // 1
-    return tryPop(); // 2
+    headLock.lock();   // 1
+    return tryDeq();   // 2
     } finally {
-    lock.unlock();   // 3
+    headLock.unlock(); // 3
     }
   }
 
-  // 1. Ensure stack is not full
-  // 2. Save data at top.
-  // 3. Increment top.
-  protected void tryPush(T x)
-    throws BufferOverflowException {
-    if (top == data.length)                // 1
+  // 1. Ensure queue is not full
+  // 2. Save data at tail.
+  // 3. Increment tail.
+  protected void tryEnq(T x) {
+    int tail2 = (tail + 1) % data.length;  // 1, 3
+    if (tail2 == head)                     // 1
       throw new BufferOverflowException(); // 1
-    data[top++] = x; // 2, 3
+    data[tail] = x; // 2
+    tail = tail2;   // 3
   }
 
-  // 1. Ensure stack is not empty.
-  // 2. Decrement top.
-  // 3. Return data at top.
-  protected T tryPop()
-    throws BufferUnderflowException {
-    if (top == 0)                           // 1
+  // 1. Ensure queue is not empty.
+  // 2. Return data at head.
+  // 3. Increment head.
+  protected T tryDeq() {
+    if (head == tail)                       // 1
       throw new BufferUnderflowException(); // 1
-    return data[--top]; // 2, 3
+    T x = data[head];                // 2
+    head = (head + 1) % data.length; // 3
+    return x;                        // 2
   }
 }
