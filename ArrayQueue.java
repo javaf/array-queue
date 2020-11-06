@@ -20,7 +20,7 @@ class ArrayQueue<T> {
   public ArrayQueue(int capacity) {
     headLock = new ReentrantLock();
     tailLock = new ReentrantLock();
-    data = (T[]) new Object[capacity];
+    data = (T[]) new Object[capacity+1];
     head = 0;
     tail = 0;
   }

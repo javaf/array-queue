@@ -1,76 +1,76 @@
 import java.util.*;
 
 class Main {
-  static Deque<Integer> stack;
-  static ArrayQueue<Integer> concurrentStack;
-  static List<Integer>[] poppedValues;
+  static Deque<Integer> queue;
+  static ArrayQueue<Integer> concurrentQueue;
+  static List<Integer>[] deqValues;
   static int TH = 10, NUM = 1000;
 
-  // Each unsafe thread pushes N numbers and pops N, adding
-  // them to its own poppedValues for checking; using Java's
-  // sequential stack implementation, ArrayDeque.
+  // Each unsafe thread enqs N numbers and deqs N, adding
+  // them to its own deqValues for checking; using Java's
+  // sequential queue implementation, ArrayDeque.
   static Thread unsafe(int id, int x, int N) {
     return new Thread(() -> {
-      String action = "push";
+      String action = "enq";
       try {
       for (int i=0, y=x; i<N; i++)
-        stack.push(y++);
+        queue.addLast(y++);
       Thread.sleep(1000);
-      action = "pop";
+      action = "deq";
       for (int i=0; i<N; i++)
-        poppedValues[id].add(stack.pop());
+        deqValues[id].add(queue.removeFirst());
       }
       catch (Exception e) { log(id+": failed "+action); }
     });
   }
 
-  // Each safe thread pushes N numbers and pops N, adding
-  // them to its own poppedValues for checking; using
-  // ArrayStack.
+  // Each safe thread enqs N numbers and deqs N, adding
+  // them to its own deqValues for checking; using
+  // ArrayQueue.
   static Thread safe(int id, int x, int N) {
     return new Thread(() -> {
-      String action = "push";
+      String action = "enq";
       try {
       for (int i=0, y=x; i<N; i++)
-        concurrentStack.push(y++);
+        concurrentQueue.enq(y++);
       Thread.sleep(1000);
-      action = "pop";
+      action = "deq";
       for (int i=0; i<N; i++)
-        poppedValues[id].add(concurrentStack.pop());
+        deqValues[id].add(concurrentQueue.deq());
       }
       catch (Exception e) { log(id+": failed "+action);
       e.printStackTrace(); }
     });
   }
 
-  // Checks if each thread popped N values, and they are
+  // Checks if each thread dequeued N values, and they are
   // globally unique.
   static boolean wasLIFO(int N) {
     Set<Integer> set = new HashSet<>();
     boolean passed = true;
     for (int i=0; i<TH; i++) {
-      int n = poppedValues[i].size();
+      int n = deqValues[i].size();
       if (n != N) {
-        log(i+": popped "+n+"/"+N+" values");
+        log(i+": dequeued "+n+"/"+N+" values");
         passed = false;
       }
-      for (Integer x : poppedValues[i])
+      for (Integer x : deqValues[i])
         if (set.contains(x)) {
           log(i+": has duplicate value "+x);
           passed = false;
         }
-      set.addAll(poppedValues[i]);
+      set.addAll(deqValues[i]);
     }
     return passed;
   }
 
   @SuppressWarnings("unchecked")
   static void testThreads(boolean safe) {
-    stack = new ArrayDeque<>();
-    concurrentStack = new ArrayQueue<>(TH*NUM);
-    poppedValues = new List[TH];
+    queue = new ArrayDeque<>();
+    concurrentQueue = new ArrayQueue<>(TH*NUM);
+    deqValues = new List[TH];
     for (int i=0; i<TH; i++)
-      poppedValues[i] = new ArrayList<>();
+      deqValues[i] = new ArrayList<>();
     Thread[] threads = new Thread[TH];
     for (int i=0; i<TH; i++) {
       threads[i] = safe?
@@ -86,11 +86,11 @@ class Main {
   }
 
   public static void main(String[] args) {
-    log("Starting "+TH+" threads with sequential stack");
+    log("Starting "+TH+" threads with sequential queue");
     testThreads(false);
     log("Was LIFO? "+wasLIFO(NUM));
     log("");
-    log("Starting "+TH+" threads with array stack");
+    log("Starting "+TH+" threads with array queue");
     testThreads(true);
     log("Was LIFO? "+wasLIFO(NUM));
     log("");
