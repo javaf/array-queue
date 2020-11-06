@@ -5,7 +5,7 @@ import java.util.concurrent.locks.*;
 // array. It uses a common lock for both push and pop
 // operations.
 
-class ArrayStack<T> {
+class ArrayQueue<T> {
   Lock lock;
   T[] data;
   int top;
@@ -14,7 +14,7 @@ class ArrayStack<T> {
   // top: top of stack (0 if empty)
 
   @SuppressWarnings("unchecked")
-  public ArrayStack(int capacity) {
+  public ArrayQueue(int capacity) {
     lock = new ReentrantLock();
     data = (T[]) new Object[capacity];
     top = 0;

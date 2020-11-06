@@ -2,7 +2,7 @@ import java.util.*;
 
 class Main {
   static Deque<Integer> stack;
-  static ArrayStack<Integer> concurrentStack;
+  static ArrayQueue<Integer> concurrentStack;
   static List<Integer>[] poppedValues;
   static int TH = 10, NUM = 1000;
 
@@ -67,7 +67,7 @@ class Main {
   @SuppressWarnings("unchecked")
   static void testThreads(boolean safe) {
     stack = new ArrayDeque<>();
-    concurrentStack = new ArrayStack<>(TH*NUM);
+    concurrentStack = new ArrayQueue<>(TH*NUM);
     poppedValues = new List[TH];
     for (int i=0; i<TH; i++)
       poppedValues[i] = new ArrayList<>();
