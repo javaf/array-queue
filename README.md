@@ -1,6 +1,11 @@
 Array queue is a bounded lock-based FIFO queue using
 an array. It uses 2 separate locks for head and tail.
 
+> **Course**: [Concurrent Data Structures], Monsoon 2020\
+> **Taught by**: Prof. Govindarajulu Regeti
+
+[Concurrent Data Structures]: https://github.com/iiithf/concurrent-data-structures
+
 ```java
 enq():
 1. Lock tail.
